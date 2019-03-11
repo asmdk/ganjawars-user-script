@@ -4,7 +4,7 @@
 // @description set right and left hand direction to shoot and evade
 // @include     http://www.gwars.ru/b0/b.php*
 // @updateURL   https://github.com/asmdk/ganjawars-user-script/blob/shoot-evade.user.js
-// @version     1.0
+// @version     1.1
 // @grant       none
 // @author		asmdk <asmdk@tut.by>
 // ==/UserScript==
@@ -14,56 +14,57 @@
 
 	// do not edit this code, settings you can change in bottom
 	let ShootEvade = function(left, right, evade) {
-        this.evadeArr = [1, 1, 2, 3, 1, 1];
-        this.shootArr = [1, 2, 3];
-		this.leftHand = left || 2;
+        this.evadeArr = [1, 2, 3];
+        this.shootArr = [2, 3];
+		this.leftHand = left || 1;
 		this.rightHand = right || null;
 		this.evade = evade || null;
+		this.enemyFalse = 'rgb(255, 224, 224)';
+		this.enemyTrue = 'rgb(224, 255, 224)';
 		this.init();
 	}
 
 	ShootEvade.prototype = {
 		init: function() {
-			let me = this;
+			let me = this,
+                leftHand = root.document.getElementById("left_attack"+me.leftHand);
+			if (leftHand != null) {
+				leftHand.click();
+			}
             if (me.rightHand == null) {
                 let rand = Math.floor( Math.random() * me.shootArr.length );
             	me.rightHand = me.shootArr[rand];
             }
-            if (me.evade == null) {
-                var rand = Math.floor( Math.random() * me.evadeArr.length );
-            	me.evade = me.evadeArr[rand];
-            }
-			let leftHand = root.document.getElementById("left_attack"+me.leftHand);
-			if (leftHand != null) {
-				leftHand.click();
-			}
 			let rightHand = root.document.getElementById("right_attack"+me.rightHand)
 			if (rightHand != null) {
 				rightHand.click();
 			}
+             if (me.evade == null) {
+                let rand = Math.floor( Math.random() * me.evadeArr.length );
+            	me.evade = me.evadeArr[rand];
+            }
 			let evade = root.document.getElementById("defence"+me.evade);
 			if (evade != null) {
 				evade.click();
 			}
 
             let submitButton = root.document.querySelectorAll("a[href='javascript:void(fight())']"),
-                walk = root.document.getElementById('walk');
+                walk = root.document.getElementById('walk'),
+                intervalSecond = (secback*1000-5000) || 25000;
             if (submitButton != null && walk != null) {
                 let div = me.createElement();
                 walk.parentNode.insertBefore(div, walk);
-                me.autoSubmit(submitButton[0]);
+                me.autoSubmit(submitButton[0], intervalSecond, me);
             }
 		},
-        autoSubmit: function(submitButton) {
+        autoSubmit: function(submitButton, intervalSecond, me) {
+			me.selectEnemy(me);
             let checkbox = root.document.getElementById('autoSubmitStatus'),
-                timeout = (secback - 5) * 1000;
-            if (timeout > 3000) {
-                let interval = setInterval(function() {
+                interval = setInterval(function() {
                 if (checkbox.checked == true) {
                     submitButton.click();
                 }
-            }, timeout);
-            }
+            }, intervalSecond);
         },
         createElement: function() {
             let div = document.createElement('div');
@@ -72,6 +73,29 @@
 
             return div;
         },
+		selectEnemy: function(me) {
+			let optionValue = 0,
+                optionIndex = -1,
+                range = 0,
+                optionlist = document.getElementById('euids').options;
+
+			for (let option = 0; option < optionlist.length; option++ ) {
+				if (optionlist[option].style.backgroundColor == me.enemyTrue) {
+					let optionArray = optionlist[option].text.split(' ');
+					if (optionArray.length > 0) {
+						var enemyRange = optionArray[optionArray.length-1];
+						if ( enemyRange == 0 && range <= enemyRange) { optionIndex = option; range=enemyRange; }
+						if ( enemyRange/enemyRange && range < enemyRange) { optionIndex = option; range=enemyRange; }
+					}
+				}
+			}
+			if (optionIndex >= 0) {
+				optionlist[optionIndex].selected=true;
+			}
+			else {
+				//root.document.getElementById('walk').checked=true;
+			}
+		}
 	}
 
 	/**
@@ -80,5 +104,7 @@
 	* 2 - set right hand direction; ***
 	* 3 -  set evade direction; ***
 	*/
-	var oShootEvade = new ShootEvade();
+	let oShootEvade = new ShootEvade();
+
+
 })();
